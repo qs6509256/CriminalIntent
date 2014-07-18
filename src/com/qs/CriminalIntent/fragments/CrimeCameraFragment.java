@@ -11,6 +11,7 @@ import android.widget.Button;
 import com.qs.CriminalIntent.R;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Description
@@ -43,6 +44,7 @@ public class CrimeCameraFragment extends Fragment {
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 
         holder.addCallback(new SurfaceHolder.Callback() {
+
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 try {
@@ -56,10 +58,24 @@ public class CrimeCameraFragment extends Fragment {
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                if (mCamera == null) {
+                    return;
+                }
 
+                Camera.Parameters parameters = mCamera.getParameters();
+                Camera.Size s = getBestSupportedSize(parameters.getSupportedPreviewSizes(), width, height);
+                parameters.setPreviewSize(s.width, s.height);
+                mCamera.setParameters(parameters);
+                try {
+                    mCamera.startPreview();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    mCamera.release();
+                    mCamera = null;
+                }
             }
 
-            @Override
+
             public void surfaceDestroyed(SurfaceHolder holder) {
                 if (mCamera != null) {
                     mCamera.stopPreview();
@@ -89,5 +105,18 @@ public class CrimeCameraFragment extends Fragment {
             mCamera.release();
             mCamera = null;
         }
+    }
+
+    private Camera.Size getBestSupportedSize(List<Camera.Size> sizes, int width, int heigth) {
+        Camera.Size bestSize = sizes.get(0);
+        int largestArea = bestSize.width * bestSize.height;
+        for (Camera.Size s : sizes) {
+            int area = s.width * s.height;
+            if (area > largestArea) {
+                bestSize = s;
+                largestArea = area;
+            }
+        }
+        return bestSize;
     }
 }
